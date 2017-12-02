@@ -1,13 +1,12 @@
-
 /*
 XiiLangMatrix.new(10)
 */
 
-XiiLangMatrix {	
+XiiLangMatrix {
 
 	var doc, string, matrix, codeDoc, start, drawMatrix, cursorPos, goto, row, col;
 	var charDict, matrixCopy, clockArray;
-	
+
 	*new { arg size=6, direction=\x, instrDict, doccol, strcol;
 		^super.new.initXiiLangMatrix( size, direction, instrDict, doccol, strcol );
 	}
@@ -16,13 +15,13 @@ XiiLangMatrix {
 		var doccol, strcol;
 		doccol = adoccol ? Color.black;
 		strcol = astrcol ? Color.white;
-		
+
 		row = 0;
 		col = 0;
-		
+
 		charDict = ();
 		clockArray = [];
-		
+
 		matrix = {arg i; {arg j;
 			().add(\char -> ".")
 			.add(\instr -> "none")
@@ -32,7 +31,7 @@ XiiLangMatrix {
 			.add(\nextX -> if(direction == \y, {j}, {((j+1)%size)}))
 			.add(\nextY -> if(direction == \y, {((i+1)%size)}, {i}))
 			.add(\sccode -> "{}")
-			.add(\code -> "	
+			.add(\code -> "
 			instr  : none
 			note   : 60
 			amp    : 0.1
@@ -42,7 +41,7 @@ XiiLangMatrix {
 			sccode : {}
 		")
 		}!size}!size; // put an empty dict into a 2d array
-		
+
 		TempoClock.default.addDependant(this);
 
 		doc = Document.new("matrix")
@@ -59,21 +58,21 @@ XiiLangMatrix {
 					loccol = ((loc%((size*2)+1))/2).floor;
 					locrow = (loc/((size*2)+1)).floor;
 					if(loccol==size, {loccol = loccol-1});
-					
+
 					{doc.title_("matrix"+loccol.asString+locrow.asString)}.defer(0.1);
-					
+
 					if(key.isAlpha, { // all chars possible, no arrows and nums
 						if((doc.string(loc) == " "), { // no char into a space
 							doc.string_(" ", loc, 2);
 						}, {
-							doc.string_("", loc, 1);	
+							doc.string_("", loc, 1);
 						});
 						if((mod == 8388864) || (mod == 8388608) || (mod == 8519938) || (mod == 10486016), { // holding down fn (and optinally shift) opens a coding window
 							if(matrix[locrow][loccol].instr == "none", { // just insert the synthdef from the instrDict
 								matrix[locrow][loccol].instr  = instrDict[key.asSymbol];
 								// no other info needed.
 							});
-							codeDoc.value(loccol, locrow, key, true); // imposed key does not exist 
+							codeDoc.value(loccol, locrow, key, true); // imposed key does not exist
 						},{ // default is keys from instrDict (as mapped by instrDict)
 							matrix[locrow][loccol].char = key;
 							// parsing the code
@@ -104,14 +103,14 @@ XiiLangMatrix {
 						if((doc.string(loc) == " "), { // no char into a space
 							doc.string_(" ", loc, 2);
 						}, {
-							doc.string_("", loc, 1);	
+							doc.string_("", loc, 1);
 						});
 						matrix[locrow][loccol].instr = "none";
 						matrix[locrow][loccol].char = ".";
 					});
 					if(selsize==1, {
 						codeDoc.value(loccol, locrow, key, true); // force open the code window
-					}); 
+					});
 					if(keycode == 48, { // use TAB to start a tempoclock
 						start.value(loccol, locrow);
 					});
@@ -124,18 +123,18 @@ XiiLangMatrix {
 					clockArray.do({arg clock; clock.clear });
 					TempoClock.default.removeDependant(this);
 				});
-		
+
 		drawMatrix = {arg row=0, col=0, wait=1, except=false;
 			var charholder;
 			charholder = if(matrix[row][col].char!=$@, { matrix[row][col].char }, {matrixCopy[row][col].char});
-		
+
 			if(except == false, { // when starting, no @ sign
 				matrix[row][col].char = $@;
 			});
-			
+
 			cursorPos = doc.selectionStart; // get cursor pos
 			string = " ";
-			matrix.do({arg row, j; 
+			matrix.do({arg row, j;
 				row.do({arg cell, i;
 					if(((i+1)%size)==0, {
 						string = string++cell.char; // original
@@ -145,23 +144,23 @@ XiiLangMatrix {
 				});
 				string = string ++ "\n ";
 			});
-			doc.string_(""); 
+			doc.string_("");
 			doc.string_(string);
 			doc.selectRange(cursorPos); // set cursor pos again
-			// the below: in a busy matrix, another clock might have drawn @. Need to 
+			// the below: in a busy matrix, another clock might have drawn @. Need to
 			{matrix[row][col].char = if(charholder==$@, {matrixCopy[row][col].char}, {charholder})}.defer(wait/4);
 		};
-		
+
 		drawMatrix.value(except:true);
-						
+
 		codeDoc = {arg argcol, argrow, thiskey, forceopen=false;
 			// note - this is the only place where matrix numbers are from 1 to n (no zero)
 			var col, row;
 			col = argcol;
 			row = argrow;
-		
+
 	//	[\chardict, charDict[thiskey.asSymbol]].postln;
-		
+
 			if(charDict[thiskey.asSymbol].isNil || forceopen, { // if new or forceopen - a window and load a dict
 			Document.new("matrix code win" + col + row + matrix[row][col].char)
 				.background_(doccol)
@@ -174,7 +173,7 @@ XiiLangMatrix {
 						//"ixi lang: Testing synthdef : ".post; doc.selectedString.postln;
 					});
 				})
-				.string_("	
+				.string_("
 	instr  : "++ matrix[row][col].instr ++ "
 	note   : "++ matrix[row][col].note ++ "
 	amp    : "++ matrix[row][col].amp ++ "
@@ -190,7 +189,7 @@ XiiLangMatrix {
 					matrix[row][col].sccode = str;
 					matrix[row][col].char = thiskey;
 					// parsing the code
-					
+
 					instr  = str[str.find("instr  :")+9..str.findAll("\n")[1]-1];
 					instr = instr.collect({arg char; if((char == Char.nl) || (char == Char.space), {""}, {char}) });
 					matrix[row][col].instr = instr.asSymbol;
@@ -216,7 +215,7 @@ XiiLangMatrix {
 					matrix[row][col].sccode = charDict[thiskey.asSymbol].sccode;
 			});
 		};
-		
+
 		start = {arg col=0, row=0;
 			clockArray = clockArray.add(
 			TempoClock.new(TempoClock.default.tempo, TempoClock.default.beats)
@@ -226,18 +225,18 @@ XiiLangMatrix {
 				var charholder, scCodeFlag;
 				var tempcol, temprow; // necessary
 				var code;
-				
+
 				scCodeFlag = false;
 				tempcol = col;
 				temprow = row;
-				
+
 				~instr = nil;
 				~note  = nil;
 				~amp   = nil;
 				~wait  = nil;
 				~nextX = nil;
 				~nextY = nil;
-				
+
 //				matrix[row][col].sccode.interpret.value; // code interpreted that might overwrite the nils above
 
 
@@ -247,11 +246,11 @@ XiiLangMatrix {
 				amp   = ~amp   ? matrix[row][col].amp;
 				char  = ~char  ? matrix[row][col].char;
 				wait  = ~wait  ? matrix[row][col].wait;
-				
+
 				{arg row, col, wait;
 					{drawMatrix.value(row, col, wait)}.defer; // drawer
 				}.value(row, col, wait);
-				
+
 				if(char!=".", {
 					{	code = matrix[row][col].sccode;
 						{code.interpret.value }.defer(0.2);
@@ -271,10 +270,10 @@ XiiLangMatrix {
 			//clockArray.postln;
 		};
 	}
-	
+
 	update {|theChanger, what, moreArgs|
 		if(what == \tempo, {
-			this.setTempo_(theChanger.tempo);	
+			this.setTempo_(theChanger.tempo);
 		});
 	}
 
@@ -282,7 +281,3 @@ XiiLangMatrix {
 		clockArray.do({arg clock; clock.tempo = newtempo });
 	}
 }
-
-
-
-

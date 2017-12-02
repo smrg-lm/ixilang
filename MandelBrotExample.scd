@@ -1,4 +1,3 @@
-
 // networked ixi lang (connecting ixi langs) demo file
 
 // use examples from the BenoitLib
@@ -16,12 +15,11 @@ m.clear;
 
 // this will sync with ixi lang
 Pbind(
-	\degree, Pseq([1, 4, 3, 2], inf), 
+	\degree, Pseq([1, 4, 3, 2], inf),
 	\dur, Pseq(1!4, inf)
 ).play(quant:1)
 
 Pbind(
-	\degree, Pseq([1, 4, 3, 2]+7, inf), 
+	\degree, Pseq([1, 4, 3, 2]+7, inf),
 	\dur, Pseq(1!4, inf)
 ).play(quant:4)
-

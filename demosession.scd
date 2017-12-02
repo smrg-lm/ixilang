@@ -73,7 +73,7 @@ snapshot three
 snapshot four
 
 matrix 6
-autocode 2 
+autocode 2
 
 savescore demoscore
 store demosession
@@ -90,4 +90,3 @@ future 2b:5 >> scale bloo minor major harmonicMinor minor
 load demosession
 // or this one
 playscore demoscore
- 

@@ -23,4 +23,3 @@ reicho ->  piano[1 2 5 6 7 2 1 6 5 2 7 6 ]
 future 8:12 >> >shift reicho 1
 
 kill
-
