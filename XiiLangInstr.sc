@@ -484,7 +484,7 @@ XiiLangInstr {
 		}).add(\xiilang);
 
 		SynthDef(\clap, {arg out=0, pan=0, amp=0.3, filterfreq=50, rq=0.01;
-			var env, signal, attack,  noise, hpf1, hpf2;
+			var env, signal, attack, noise, hpf1, hpf2;
 			noise = WhiteNoise.ar(1)+SinOsc.ar([filterfreq/2,filterfreq/2+4 ], pi*0.5, XLine.kr(1,0.01,4));
 			//noise = PinkNoise.ar(1)+SinOsc.ar([(filterfreq)*XLine.kr(1,0.01,3), (filterfreq+4)*XLine.kr(1,0.01,3) ], pi*0.5, XLine.kr(1,0.01,4));
 			//signal = signal * SinOsc.ar(1,0.75);
@@ -573,7 +573,7 @@ Pdef(\test, Pbind(\instrument, \clap, \midinote, Prand([1, 2, 5, 7, 9, 3], inf) 
 		SynthDef(\deepdubsynth, {arg out=0, freq=220, amp=0.1, dur=1, gate=1, tmp=2, pan=0;
 			var trig, note, son, sweep, bassenv, bd, sd, swr;
 			var midinote, unienv;
-		   	trig = Impulse.kr(tmp);
+				trig = Impulse.kr(tmp);
 			
 			midinote = freq.cpsmidi/2;
 			
@@ -1372,7 +1372,7 @@ Pdef(\test, Pbind(\instrument, \clap, \midinote, Prand([1, 2, 5, 7, 9, 3], inf) 
 		}).add(\xiilang);
 
 		SynthDef(\clap, {arg out=0, pan=0, amp=0.3, filterfreq=50, rq=0.01;
-			var env, signal, attack,  noise, hpf1, hpf2;
+			var env, signal, attack, noise, hpf1, hpf2;
 			noise = WhiteNoise.ar(1)+SinOsc.ar([filterfreq/2,filterfreq/2+4 ], pi*0.5, XLine.kr(1,0.01,4));
 			//noise = PinkNoise.ar(1)+SinOsc.ar([(filterfreq)*XLine.kr(1,0.01,3), (filterfreq+4)*XLine.kr(1,0.01,3) ], pi*0.5, XLine.kr(1,0.01,4));
 			//signal = signal * SinOsc.ar(1,0.75);
@@ -1460,7 +1460,7 @@ Pdef(\test, Pbind(\instrument, \clap, \midinote, Prand([1, 2, 5, 7, 9, 3], inf) 
 		SynthDef(\deepdubsynth, {arg out=0, freq=220, amp=0.1, dur=1, gate=1, tmp=2, pan=0;
 			var trig, note, son, sweep, bassenv, bd, sd, swr;
 			var midinote, unienv;
-		   	trig = Impulse.kr(tmp);
+				trig = Impulse.kr(tmp);
 			
 			midinote = freq.cpsmidi/2;
 			
