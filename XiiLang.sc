@@ -266,6 +266,7 @@ XiiLang {
 				"ixilang/"++project++"/colors.ixi"
 			);
 		};
+		*/
 		if(doccolor.isNil, {
 			doccolor = Color.black;
 			oncolor = Color.white;
@@ -273,7 +274,6 @@ XiiLang {
 			offcolor = Color.green;
 			deadcolor = Color.red;
 		});
-		*/
 
 		doc.bounds_(Rect(0, 0, 500, 400));
 		//doc.background_(doccolor);
@@ -310,7 +310,7 @@ XiiLang {
 
 			// tempo tap function (ctrl+, for starting and ctrl+. for stopping (the < and > keys))
 			if((mod & ctrl > 0) && (keycode == ($,).ascii), {
-				if(tapping == false, {
+				if(tapping.not, {
 					time = Main.elapsedTime;
 					tapping = true;
 				});
@@ -318,12 +318,14 @@ XiiLang {
 			});
 
 			if((mod & ctrl > 0) && (keycode == ($.).ascii), {
-				time = Main.elapsedTime - time;
-				tempo = tapcount / time;
-				tapping = false;
-				tapcount = 0;
-				" --->   ixi lang Tempo : set to % BPM\n".postf(tempo*60);
-				TempoClock.default.tempo = tempo;
+				if(tapping, {
+					time = Main.elapsedTime - time;
+					tempo = tapcount / time;
+					tapping = false;
+					tapcount = 0;
+					" --->   ixi lang Tempo : set to % BPM\n".postf(tempo*60);
+					TempoClock.default.tempo = tempo;
+				});
 			});
 		});
 
@@ -715,10 +717,11 @@ XiiLang {
 				var doc;
 				doc = Document.new;
 				doc.name_("scales");
-				doc.promptToSave_(false);
-				doc.background_(Color.black);
-				doc.stringColor_(Color.green);
-				doc.bounds_(Rect(10, 500, 500, 800));
+				//doc.promptToSave_(false);
+				//doc.background_(Color.black);
+				//doc.stringColor_(Color.green);
+				doc.palette_(QPalette.dark);
+				doc.bounds_(Rect(0, 0, 500, 400));
 				doc.font_(Font("Monaco",16));
 				doc.string_("Scales: " + ScaleInfo.scales.keys.asArray.sort.asCompileString
 				+"\n\n Tunings: "+
@@ -1324,7 +1327,7 @@ XiiLang {
 		agentDict[agent] = nil;
 		metaAgentDict[agent] = nil;
 
-		{doc.stringColor_(deadcolor, doc.selectionStart, doc.selectionSize)}.defer(0.1); // killed code is red
+		{ doc.setStringColor(deadcolor, doc.selectionStart, doc.selectionSize) }.defer(0.1); // killed code is red
 	}
 
 	interpret { arg cmd;
@@ -1371,7 +1374,7 @@ XiiLang {
 						allreturns = doc.string.findAll("\n");
 						// the following checks if it's exactly the same agent name (and not confusing joe and joel)
 						#stringstart, stringend = this.findStringStartEnd(doc, pureagentname);
-						doc.stringColor_(offcolor, stringstart, stringend-stringstart);
+						doc.setStringColor(offcolor, stringstart, stringend-stringstart);
 					});
 				});
 				// then run the agents in the snapshot and replace strings in doc
@@ -1393,7 +1396,7 @@ XiiLang {
 						// --  2)  Swap the string in the doc
 						// either with the simple swap
 						doc.setString(dictscore, stringstart, stringend-stringstart); // this one keeps text colour
-						doc.stringColor_(oncolor, stringstart, stringend-stringstart);
+						doc.setStringColor(oncolor, stringstart, stringend-stringstart);
 
 						// --  3)  Run the code (parse it) - IF playstate is true (in case it's been dozed)
 						try{ // try, because if loading from "load", then there will be no proxyspace yet
@@ -1429,7 +1432,7 @@ XiiLang {
 						Pdef(keyagentname).stop; // new
 						proxyspace[keyagentname].stop;
 						#stringstart, stringend = this.findStringStartEnd(doc, pureagentname);
-						doc.stringColor_(offcolor, stringstart, stringend-stringstart);
+						doc.setStringColor(offcolor, stringstart, stringend-stringstart);
 					});
 				});
 			});
@@ -1641,7 +1644,7 @@ XiiLang {
 		agentDict[agent][1].scorestring = scorestring.asCompileString;
 		agentDict[agent][1].instrument = "rhythmtrack";
 
-		{doc.stringColor_(oncolor, doc.selectionStart, doc.selectionSize)}.defer(0.1);  // if code is green (sleeping)
+		{ doc.setStringColor(oncolor, doc.selectionStart, doc.selectionSize) }.defer(0.1);  // if code is green (sleeping)
 		"------    ixi lang: Created Percussive Agent : ".post; pureagent.postln; agentDict[agent].postln;
 		^this.playScoreMode0(agent, notearr, durarr, instrarr, sustainarr, attackarr, panarr, quantphase, newInstrFlag, morphmode, repeats, return, snapshot);
 	}
@@ -1760,7 +1763,7 @@ XiiLang {
 		agentDict[agent][1].instrument = instrument;
 		agentDict[agent][1].midichannel = midichannel;
 
-		{doc.stringColor_(oncolor, doc.selectionStart, doc.selectionSize)}.defer(0.1);  // if code is green (sleeping)
+		{ doc.setStringColor(oncolor, doc.selectionStart, doc.selectionSize) }.defer(0.1);  // if code is green (sleeping)
 		"------    ixi lang: Created Melodic Agent : ".post; pureagent.postln; agentDict[agent].postln;
 		^this.playScoreMode1(agent, notearr, durarr, sustainarr, attackarr, panarr, instrument, quantphase, newInstrFlag, midichannel, repeats, return, snapshot);
 		// this has to be below the playscore method
@@ -1857,7 +1860,7 @@ XiiLang {
 		agentDict[agent][1].scorestring = string.asCompileString;
 		agentDict[agent][1].instrument = instrument;
 
-		{doc.stringColor_(oncolor, doc.selectionStart, doc.selectionSize)}.defer(0.1); // if code is green (sleeping)
+		{ doc.setStringColor(oncolor, doc.selectionStart, doc.selectionSize) }.defer(0.1); // if code is green (sleeping)
 		"------    ixi lang: Created Concrete Agent : ".post; pureagent.postln; agentDict[agent].postln;
 		^this.playScoreMode2(agent, pitch, amparr, durarr, panarr, instrument, quantphase, newInstrFlag, repeats, return, snapshot);
 		// this has to be below the playscore method
@@ -2595,7 +2598,7 @@ XiiLang {
 					{ // make agent white again
 						cursorPos = doc.selectionStart; // get cursor pos
 						#stringstart, stringend = this.findStringStartEnd(doc, pureagentname); // this will cause error since the agent string will have changed
-						doc.stringColor_(oncolor, stringstart, stringend-stringstart);
+						doc.setStringColor(oncolor, stringstart, stringend-stringstart);
 						doc.select(cursorPos, 0); // set cursor pos again
 					}.defer;
 			});
@@ -2611,7 +2614,7 @@ XiiLang {
 					{ // make the agent yellow
 						cursorPos = doc.selectionStart; // get cursor pos
 						#stringstart, stringend = this.findStringStartEnd(doc, pureagentname);
-						doc.stringColor_(activecolor, stringstart, stringend-stringstart);
+						doc.setStringColor(activecolor, stringstart, stringend-stringstart);
 						doc.select(cursorPos, 0); // set cursor pos again
 					}.defer;
 					0.3.wait;
@@ -2638,7 +2641,7 @@ XiiLang {
 					{ // make agent white again
 						cursorPos = doc.selectionStart; // get cursor pos
 						#stringstart, stringend = this.findStringStartEnd(doc, pureagentname); // this will cause error since the agent string will have changed
-						doc.stringColor_(oncolor, stringstart, stringend-stringstart);
+						doc.setStringColor(oncolor, stringstart, stringend-stringstart);
 						doc.select(cursorPos, 0); // set cursor pos again
 					}.defer;
 
@@ -2683,14 +2686,14 @@ XiiLang {
 						if(agentDict[agent][1].playstate == true, {
 							agentDict[agent][1].playstate = false;
 							proxyspace[agent].stop;
-					 		doc.stringColor_(offcolor, stringstart, stringend-stringstart);
+					 		doc.setStringColor(offcolor, stringstart, stringend-stringstart);
 						});
 					}
 					{"perk"} { // restart stream
 						if(agentDict[agent][1].playstate == false, {
 							agentDict[agent][1].playstate = true;
 							proxyspace[agent].play;
-					 		doc.stringColor_(oncolor, stringstart, stringend-stringstart);
+					 		doc.setStringColor(oncolor, stringstart, stringend-stringstart);
 						});
 					}
 					{"nap"} { // pause for either n secs or n secs:number of times
@@ -2707,12 +2710,12 @@ XiiLang {
 						 			if(on, {
 						 				proxyspace[agent].objects[0].array[0].mute;
 						 				agentDict[agent][1].playstate = false;
-								 		{doc.stringColor_(offcolor, stringstart, stringend-stringstart)}.defer;
+										{ doc.setStringColor(offcolor, stringstart, stringend-stringstart) }.defer;
 						 				on = false;
 						 			}, {
 						 				proxyspace[agent].objects[0].array[0].unmute;
 										agentDict[agent][1].playstate = true;
-								 		{doc.stringColor_(oncolor, stringstart, stringend-stringstart)}.defer;
+										{ doc.setStringColor(oncolor, stringstart, stringend-stringstart) }.defer;
 						 				on = true;
 						 			});
 						 			napdur.wait;
@@ -2722,10 +2725,10 @@ XiiLang {
 						 	{
 								napdur = argument.asFloat;
 					 			proxyspace[agent].objects[0].array[0].mute;
-								{doc.stringColor_(offcolor, stringstart, stringend-stringstart)}.defer;
+								{ doc.setStringColor(offcolor, stringstart, stringend-stringstart) }.defer;
 								napdur.wait;
 					 			proxyspace[agent].objects[0].array[0].unmute;
-								{doc.stringColor_(oncolor, stringstart, stringend-stringstart)}.defer;
+								{ doc.setStringColor(oncolor, stringstart, stringend-stringstart) }.defer;
 						 	}.fork(TempoClock.new);
 					 	});
 					};
@@ -2773,7 +2776,7 @@ XiiLang {
 							proxyspace[agent].stop;
 						//});
 						//proxyspace[agent].objects[0].array[0].mute;
-				 		doc.stringColor_(offcolor, stringstart, stringend-stringstart);
+				 		doc.setStringColor(offcolor, stringstart, stringend-stringstart);
 					});
 				}
 				{"perk"} { // restart stream
@@ -2784,7 +2787,7 @@ XiiLang {
 							proxyspace[agent].play;
 						//});
 						//proxyspace[agent].objects[0].array[0].unmute;
-				 		doc.stringColor_(oncolor, stringstart, stringend-stringstart);
+				 		doc.setStringColor(oncolor, stringstart, stringend-stringstart);
 					});
 				}
 				{"nap"} { // pause for either n secs or n secs:number of times
@@ -2811,7 +2814,7 @@ XiiLang {
 									});
 					 				try{proxyspace[agent].objects[0].array[0].mute}; // inside try, as metaagents have to nap as well
 					 				agentDict[agent][1].playstate = false;
-							 		{doc.stringColor_(offcolor, stringstart, stringend-stringstart)}.defer;
+									{ doc.setStringColor(offcolor, stringstart, stringend-stringstart) }.defer;
 					 				on = false;
 					 			}, {
 									if(agentDict[agent][1].mode == 2, { // mode 2 would not mute/unmute
@@ -2819,7 +2822,7 @@ XiiLang {
 									});
 					 				try{proxyspace[agent].objects[0].array[0].unmute}; // inside try, as metaagents have to nap as well
 									agentDict[agent][1].playstate = true;
-							 		{doc.stringColor_(oncolor, stringstart, stringend-stringstart)}.defer;
+									{ doc.setStringColor(oncolor, stringstart, stringend-stringstart) }.defer;
 					 				on = true;
 					 			});
 
@@ -2845,7 +2848,7 @@ XiiLang {
 							});
 
 					 		try{proxyspace[agent].objects[0].array[0].mute};
-							{doc.stringColor_(offcolor, stringstart, stringend-stringstart)}.defer;
+							{ doc.setStringColor(offcolor, stringstart, stringend-stringstart) }.defer;
 							if(barmode, {
 							      ((napdur*agentDict[agent][1].durarr.sum)/TempoClock.default.tempo).wait;
 							},{
@@ -2855,7 +2858,7 @@ XiiLang {
 								proxyspace[agent].play;
 							});
 					 		try{proxyspace[agent].objects[0].array[0].unmute};
-							{doc.stringColor_(oncolor, stringstart, stringend-stringstart)}.defer;
+							{ doc.setStringColor(oncolor, stringstart, stringend-stringstart) }.defer;
 					 	}.fork(TempoClock.new);
 				 	});
 				}
