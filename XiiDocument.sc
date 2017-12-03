@@ -1,0 +1,3 @@
+XiiDocument : TextView {
+	classvar current; // ?
+}

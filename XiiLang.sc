@@ -133,13 +133,13 @@ XiiLang {
 	var thisversion = 4;
 	var numChan;
 
-	*new { arg project="default", keyarg="C", txt=false, newdoc=false, language, dicts, score, numChannels=2;
-		^super.new.initXiiLang( project, keyarg, txt, newdoc, language, dicts, score, numChannels);
+	*new { arg project="default", keyarg="C", txt=false, language, dicts, score, numChannels=2;
+		^super.new.initXiiLang( project, keyarg, txt, language, dicts, score, numChannels);
 	}
 
-	initXiiLang {arg project, keyarg, txt, newdoc, lang, dicts, score, numChannels;
-		"project, keyarg, txt, newdoc, lang, dicts, score, numChannels".postln;
-		[project, keyarg, txt, newdoc, lang, dicts, score, numChannels].postln;
+	initXiiLang { arg project, keyarg, txt, lang, dicts, score, numChannels;
+		"project, keyarg, txt, lang, dicts, score, numChannels".postln;
+		[project, keyarg, txt, lang, dicts, score, numChannels].postln;
 		if(score.isNil, {
 			randomseed = 1000000.rand;
 		},{
@@ -155,7 +155,7 @@ XiiLang {
 		key = keyarg;
 
 		numChan = numChannels;
-		initargs = [project, key, txt, newdoc, lang, numChan];
+		initargs = [project, key, txt, lang, numChan];
 		XiiLangSingleton.new(this, globaldocnum);
 		// the number of this document (allows for multiple docs using same variable names)
 		docnum = globaldocnum; // this number is now added in front of all agent names
@@ -192,7 +192,7 @@ XiiLang {
 
 		eventtype = \note;
 		this.makeEffectDict; // in a special method, as it has to be called after every cmd+dot
-		this.envirSetup( txt, newdoc, project );
+		this.envirSetup(txt, project);
 		ixiInstr = XiiLangInstr.new(project, numChannels: numChan);
 		instrDict = ixiInstr.makeInstrDict;
 		SynthDescLib.read;
@@ -253,19 +253,18 @@ XiiLang {
 	}
 
 	//set up document and the keydown control
-	envirSetup { arg txt, newdoc, project;
+	envirSetup { arg txt, project;
 		var recdoc;
 
-		GUI.cocoa;
-		if(newdoc, {
-			doc = Document.new;
-		}, {
-			doc = Document.current;
-		});
+		doc = XiiDocument.new;
 
+		/*
 		// color scheme
-		try{ // check if the color file exists
-			#doccolor, oncolor, activecolor, offcolor, deadcolor = Object.readArchive("ixilang/"++project++"/colors.ixi")
+		try{
+			#doccolor, oncolor, activecolor,
+			offcolor, deadcolor = Object.readArchive(
+				"ixilang/"++project++"/colors.ixi"
+			);
 		};
 		if(doccolor.isNil, {
 			doccolor = Color.black;
@@ -274,40 +273,51 @@ XiiLang {
 			offcolor = Color.green;
 			deadcolor = Color.red;
 		});
+		*/
 
-		doc.bounds_(Rect(400,300, 1000, 600));
-		doc.background_(doccolor);
-		doc.stringColor_(oncolor);
-		if(txt == false, { doc.string_("") });
-		doc.name_("ixi lang   -   project :" + project.quote + "  -   window nr:" + docnum.asString);
+		doc.bounds_(Rect(0, 0, 500, 400));
+		//doc.background_(doccolor);
+		//doc.stringColor_(oncolor);
+		doc.palette_(QPalette.dark);
 		doc.font_(Font("Monaco",20));
-		doc.promptToSave_(false);
-		doc.keyDownAction_({|doc, char, mod, unicode, keycode |
-			var linenr, string;
-			// evaluating code (the next line will use .isAlt, when that is available
-			if((mod & 524288 == 524288) && ((keycode==124)||(keycode==123)||(keycode==125)||(keycode==126)), { // alt + left or up or right or down arrow keys
-				linenr = doc.string[..doc.selectionStart-1].split($\n).size;
-				doc.selectLine(linenr);
-				string = doc.selectedString;
-				if(keycode==123, { // not 124, 125,
-					this.freeAgent(string);
-				}, {
-					this.opInterpreter(string);
-				});
+
+		if(txt == false, { doc.string_("") });
+
+		doc.name_(
+			"ixi lang   -   project :" + project.quote +
+			"  -   window nr:" + docnum.asString
+		);
+
+		//doc.promptToSave_(false);
+
+		doc.keyDownAction_({ arg doc, char, mod, unicode, keycode;
+			var ctrl = 262144;
+
+			// interpret ctrl-e
+			if((mod & ctrl > 0) && (keycode == $e.ascii), {
+				this.opInterpreter(doc.currentLine);
 			});
-			// create a live sampler doc (fn+Enter)
-			if((mod == 8388864) && (unicode == 3), {
+
+			// freeAgent ctrl-f
+			if((mod & ctrl > 0) && (keycode == $f.ascii), {
+				this.freeAgent(doc.currentLine);
+			});
+
+			// create a live sampler doc ctrl-r
+			if((mod & ctrl > 0) && (keycode == $r.ascii), {
 				ixiInstr.createRecorderDoc(this, numChan);
 			});
+
 			// tempo tap function (ctrl+, for starting and ctrl+. for stopping (the < and > keys))
-			if(((mod == 262145)||(mod==262401)) && (unicode == 44), {
+			if((mod & ctrl > 0) && (keycode == ($,).ascii), {
 				if(tapping == false, {
 					time = Main.elapsedTime;
 					tapping = true;
 				});
 				tapcount = tapcount + 1;
 			});
-			if(((mod == 262145)||(mod==262401)) && (unicode == 46), {
+
+			if((mod & ctrl > 0) && (keycode == ($.).ascii), {
 				time = Main.elapsedTime - time;
 				tempo = tapcount / time;
 				tapping = false;
@@ -316,11 +326,15 @@ XiiLang {
 				TempoClock.default.tempo = tempo;
 			});
 		});
+
+		/* *** No entiendo esto
 		doc.keyUpAction_({|doc, char, mod, unicode, keycode |
 			if(mod == 8388864, {
 				recdoc.close;
 			});
 		});
+		*/
+
 		doc.onClose_({
 			// xxx free buffers
 			ixiInstr.freeBuffers; // not good as playscore reads a new doc (NEED TO FIX)
@@ -331,6 +345,7 @@ XiiLang {
 			});
 			snapshotDict[\futures].stop;
 		});
+
 		// these two folders are created if the user is downloading from github and hasn't created the ixilang folder in their SC folder
 		if(("ixilang").pathMatch==[], {
 			("mkdir -p" + ("ixilang")).unixCmd; // create the scores folder
@@ -357,6 +372,8 @@ XiiLang {
 			("mkdir -p" + ("ixilang/"++project++"/samples")).unixCmd; // create the samples folder
 			"ixi-lang NOTE: a samples folder was not found for saving scores - It was created".postln;
 		});
+
+		doc.front;
 	}
 
 	// the interpreter of thie ixi lang
@@ -499,9 +516,9 @@ XiiLang {
 										if(snapshot != \futures, { testcond = true });
 									});
 									{
-									cursorPos = doc.selectionStart; // get cursor pos
-									this.parseSnapshot("snapshot " ++ snapshot.asString);
-									doc.selectRange(cursorPos); // set cursor pos again
+										cursorPos = doc.selectionStart; // get cursor pos
+										this.parseSnapshot("snapshot " ++ snapshot.asString);
+										doc.select(cursorPos, 0); // set cursor pos again
 									}.defer;
 								})
 							}.fork(TempoClock.new) // not using default clock, since new tempo affects wait (strange?/bug?)
@@ -1043,18 +1060,19 @@ XiiLang {
 
 				xiilang = XiiLang.new(initargs[0], initargs[1], initargs[2], true, initargs[4], numChannels: numChan);
 				xiilang.doc.name_("ixi lang coder");
-				xiilang.doc.keyDownAction_({| thisdoc, char, mod, unicode, keycode |
-					var linenr, string;
-					if((mod & 524288 == 524288) && ((keycode==124)||(keycode==123)||(keycode==125)||(keycode==126)), {
-						linenr = thisdoc.string[..thisdoc.selectionStart-1].split($\n).size;
-						thisdoc.selectLine(linenr);
-						string = thisdoc.selectedString;
-						if(keycode==123, { // not 124, 125,
-							xiilang.freeAgent(string);
-						}, {
-							xiilang.opInterpreter(string);
-						});
+				xiilang.doc.keyDownAction_({ arg thisdoc, char, mod, unicode, keycode;
+					var ctrl = 262144;
+
+					// interpret ctrl-e
+					if((mod & ctrl > 0) && (keycode == $e.ascii), {
+						this.opInterpreter(doc.currentLine);
 					});
+
+					// freeAgent ctrl-f
+					if((mod & ctrl > 0) && (keycode == $f.ascii), {
+						this.freeAgent(doc.currentLine);
+					});
+
 					// here adding what the coder is about
 					if(char.isAlpha, {
 						Synth(instrDict[char.asSymbol], [\freq, 60.midicps]); // original
@@ -1097,13 +1115,13 @@ XiiLang {
 					});
 					xiilang.doc.string = newdocstring;
 					{
-						newLines.do({arg i;
+						newLines.do({ arg i;
 							var xiistring;
 							"running newlines".postln;
 							currentLine = currentLine + 1;
-							xiilang.doc.selectLine(currentLine);
+							xiilang.doc.selectLine(currentLine); // *** No existe en TextView
 							xiistring = xiilang.doc.selectedString;
-							try{this.opInterpreter(xiistring)};
+							try{ this.opInterpreter(xiistring) };
 
 							0.5.wait;
 						});
@@ -1260,13 +1278,16 @@ XiiLang {
 			});
 		}.fork(AppClock);
 	}
+
 	// method invoked on alt+left arrow, for easy freeing of an agent (line)
 	freeAgent { arg string;
 		var prestring, splitloc, agent, linenr;
 		var recursionfunc;
+
 		linenr = doc.string[..doc.selectionStart-1].split($\n).size;
-		doc.selectLine(linenr);
+		doc.selectLine(linenr); // *** No existen en TextView
 		string = string.tr($ , \);
+
 		splitloc = string.find("->");
 		agent = string[0..splitloc-1]; // get the name of the agent
 		agent = (docnum.asString++agent).asSymbol;
@@ -1371,7 +1392,7 @@ XiiLang {
 
 						// --  2)  Swap the string in the doc
 						// either with the simple swap
-						doc.string_( dictscore, stringstart, stringend-stringstart); // this one keeps text colour
+						doc.setString(dictscore, stringstart, stringend-stringstart); // this one keeps text colour
 						doc.stringColor_(oncolor, stringstart, stringend-stringstart);
 
 						// --  3)  Run the code (parse it) - IF playstate is true (in case it's been dozed)
@@ -2444,7 +2465,9 @@ XiiLang {
 
 	findStringStartEnd {arg doc, pureagentname;
 		var allreturns, stringstart, stringend, tempstringstart;
+
 		allreturns = doc.string.findAll("\n");
+
 		try{block{ | break |
 			doc.string.findAll(pureagentname).do({arg loc, i;
 				stringend = allreturns[allreturns.indexOfGreaterThan(loc)];
@@ -2573,7 +2596,7 @@ XiiLang {
 						cursorPos = doc.selectionStart; // get cursor pos
 						#stringstart, stringend = this.findStringStartEnd(doc, pureagentname); // this will cause error since the agent string will have changed
 						doc.stringColor_(oncolor, stringstart, stringend-stringstart);
-						doc.selectRange(cursorPos); // set cursor pos again
+						doc.select(cursorPos, 0); // set cursor pos again
 					}.defer;
 			});
 
@@ -2589,21 +2612,20 @@ XiiLang {
 						cursorPos = doc.selectionStart; // get cursor pos
 						#stringstart, stringend = this.findStringStartEnd(doc, pureagentname);
 						doc.stringColor_(activecolor, stringstart, stringend-stringstart);
-						doc.selectRange(cursorPos); // set cursor pos again
+						doc.select(cursorPos, 0); // set cursor pos again
 					}.defer;
 					0.3.wait;
 					{ // swap agent's strings
 						cursorPos = doc.selectionStart; // get cursor pos
 						#stringstart, stringend = this.findStringStartEnd(doc, pureagentname);
-
-						doc.string_( modstring, stringstart, stringend-stringstart);
+						doc.setString(modstring, stringstart, stringend-stringstart);
 
 						// for methods that change string sizes, it's good to do the below so cursor is placed correctly
 						// if cursorPos < stringend, then the same location, else calcultate new location cf. new string size
 						if(cursorPos<stringend, {
-							doc.selectRange(cursorPos); // set cursor pos again
+							doc.select(cursorPos, 0); // set cursor pos again
 						}, {
-							doc.selectRange(cursorPos+(modstring.size-(stringend-stringstart))); // set cursor pos again
+							doc.select(cursorPos+(modstring.size-(stringend-stringstart)), 0); // set cursor pos again
 						});
 						switch(scoremode)
 							{0} { if(agentDict[agent][1].playstate, {this.parseScoreMode0(modstring, return)}) }
@@ -2617,7 +2639,7 @@ XiiLang {
 						cursorPos = doc.selectionStart; // get cursor pos
 						#stringstart, stringend = this.findStringStartEnd(doc, pureagentname); // this will cause error since the agent string will have changed
 						doc.stringColor_(oncolor, stringstart, stringend-stringstart);
-						doc.selectRange(cursorPos); // set cursor pos again
+						doc.select(cursorPos, 0); // set cursor pos again
 					}.defer;
 
 				}.fork(TempoClock.new);
@@ -3084,12 +3106,13 @@ XiiLang {
 
 	getMethodsList {
 		var doc;
-		doc = Document.new;
+		doc = XiiDocument.new;
 		doc.name_("ixi lang lingo");
-		doc.promptToSave_(false);
-		doc.background_(Color.black);
-		doc.stringColor_(Color.green);
-		doc.bounds_(Rect(10, 500, 650, 800));
+		//doc.promptToSave_(false);
+		//doc.background_(Color.black);
+		//doc.stringColor_(Color.green);
+		doc.palette_(QPalette.dark);
+		doc.bounds_(Rect(0, 0, 500, 400));
 		doc.font_(Font("Monaco",16));
 		doc.string_("
 	    --    ixi lang lingo	   --
@@ -3176,16 +3199,18 @@ XiiLang {
  tremolo
  vibrato
 	");
+		doc.front;
 	}
 
 	getInstrumentsList {
 		var doc;
-		doc = Document.new;
+		doc = XiiDocument.new;
 		doc.name_("ixi lang instruments");
-		doc.promptToSave_(false);
-		doc.background_(doccolor);
-		doc.stringColor_(offcolor);
-		doc.bounds_(Rect(10, 500, 500, 800));
+		//doc.promptToSave_(false);
+		//doc.background_(doccolor);
+		//doc.stringColor_(offcolor);
+		doc.palette_(QPalette.dark);
+		doc.bounds_(Rect(0, 0, 500, 400));
 		doc.font_(Font("Monaco",16));
 		doc.string_("
 	    --    ixi lang instruments    --
@@ -3208,10 +3233,11 @@ ixiInstr.getXiiLangSynthesisSynthdefs // calling an XiiLangInstr instance
 
 ixiInstr.getSamplesSynthdefs
 	);
+		doc.front;
 	}
 
 	addixiMenu {
-
+		/* *** No se puede usar
 		var a;
 		CocoaMenuItem.clearCustomItems;
 		a = SCMenuGroup(nil, "ixi", 10);
@@ -3247,6 +3273,7 @@ ixiInstr.getSamplesSynthdefs
 					});
 				});
 			});
+		*/
 	}
 
 
